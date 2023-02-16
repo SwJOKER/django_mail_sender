@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block title %}<title>MailTasker - Задание</title>{% endblock %}
+{% block content %}
+{% load static %}
+    {{ form.errors }}
+    <div id="task_details">
+    <h2>Задание</h2>
+    <div>Имя: {{ object.name }}</div>
+    {% if object.status == object.ACTIVE %}
+        <div>Статус: Активно</div>
+        <div>Запланированное время рассылки: {{ object.start_time }}</div>
+    {% else %}
+        <div>Статус: {{ object.get_status_display }}</div>
+    {% endif %}
+    {% if object.status == object.FINISHED %}
+        Прочитано: {{ object.get_readed_letters.count }}/{{ object.get_ready_letters.count }}
+    {% endif %}
+    {% if user.smtp %}
+        {% if form and object.can_start %}
+            <form action="{{ action_link }}" method="post">
+                {% csrf_token %}
+                {% if object.status == 'r' %}
+                    {{ form.scheduled.label_tag }}
+                    <div><span>{{ form.scheduled }}</span>{{ form.start_time }}</div>
+                    <button type="submit">Запустить</button>
+                {% else %}
+                    <button type="submit">Повторить</button>
+                {% endif %}
+            </form>
+        {% endif %}
+    {% else %}
+        <div>Для запуска задания нужно <a href="{% url 'mailtasks:set_smtp' %}">настроить SMTP</a></div>
+    {% endif %}
+    {% if object.can_stop %}
+        <form action="{% url 'mailtasks:task_stop' object.id %}" method="post">
+            {% csrf_token %}
+            <button type="submit">Остановить</button>
+        </form>
+    {% endif %}
+    {% if object.can_delete %}
+    <form name="delete" onsubmit="return confirm('Вы уверены, что хотите удалить задание?')" title="Удалить"
+          action="{% url 'mailtasks:task_delete' object.id %}" method="post">
+        {% csrf_token %}
+        <button type="submit"><img src = "{%  static 'mailtasks/delete.svg' %}" alt="Ok" height="20px"/></button>
+    </form>
+    {% endif %}
+    {% if object.get_ready_letters.count == object.get_subscribers.count %}
+        <table data-type='common_table'>
+            <tr>
+                <td>Отправлено</td>
+                <td>Прочитано</td>
+                <td>Получатель</td>
+                <td>Письмо</td>
+            </tr>
+            {% for letter in object.get_ready_letters %}
+            <tr>
+                <td>
+                {% if letter.send_time %}
+                    {{ letter.send_time }}
+                {% else %}
+                    -
+                {% endif %}
+                </td>
+                <td>
+                {% if letter.read_datetime %}
+                    <img class="filter-green" src = "{%  static 'mailtasks/ok.svg' %}" alt="Ok" height="15px" style="vertical-align: -0.2em;fill:green"/>
+                {% else %}
+                    -
+                {% endif %}
+                </td>
+                <td>
+                    {{ letter.recipient }}
+                </td>
+                <td>
+                    <a target="_blank" href="{% url 'mailtasks:letter_detail' letter.pk %}">Ссылка</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <div>Письма еще не готовы. Обновите страницу позже.</div>
+    {% endif %}
+    </div>
+    <script type="text/javascript">
+        if (typeof(id_scheduled) !== 'undefined') {
+            document.getElementById('id_start_time').disabled = !id_scheduled.checked
+            id_scheduled.addEventListener('change', (event) => {
+                if (event.currentTarget.checked) {
+                       document.getElementById('id_start_time').disabled = false
+                } else {
+                       document.getElementById('id_start_time').disabled = true
+                }
+            })
+        }
+    </script>
+{% endblock %}

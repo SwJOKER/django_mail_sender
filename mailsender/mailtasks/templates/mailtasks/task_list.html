@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block title %}<title>MailTasker - Задания</title>{% endblock %}
+{% block content %}
+      <div class="list_div"><h3>Задания</h3></div>
+      {% if tasks %}
+            <div id="task_filter">
+                  <div data-filter="a">
+                        Запланированы
+                  </div>
+                  <div data-filter="f">
+                        Завершены
+                  </div>
+                  <div data-filter="e">
+                        С ошибкой
+                  </div>
+                  <div data-filter="r">
+                        Готовы к отправке
+                  </div>
+                  <div data-filter="">
+                        Все
+                  </div>
+            </div>
+            <div id="null_filter_result" class="list_div">Нет заданий соответствующих параметрам фильтра.</div>
+            <table data-type="list">
+                  <tr>
+                        <td>Статус</td>
+                        <td>Время отправки</td>
+                        <td>Название</td>
+                        <td>Писем</td>
+                        <td>Отправлено</td>
+                        <td>Прочитано</td>
+                  </tr>
+            {% for task in tasks %}
+                  <tr class="clickable-row" data-status="{{ task.status }}" data-href="{% url 'mailtasks:task_detail' pk=task.id %}">
+                        <td>
+                              {{ task.get_status_display }}
+                        </td>
+                        <td>
+                              {% if task.start_time %}
+                                    {{ task.start_time }}
+                              {% else %}
+                                    -
+                              {% endif %}
+                        </td>
+                        <td>
+                              {{ task.name }}
+                        </td>
+                        <td>
+                              {{ task.get_ready_letters.count }}
+                        </td>
+                        <td>
+                              {{ task.get_sended_letters.count }}
+                        </td>
+                        <td>
+                              {{ task.get_readed_letters.count }}
+                        </td>
+                  </tr>
+            {% endfor %}
+            </table>
+      {% else %}
+            <div class="list_div">Заданий пока нет</div>
+      {% endif %}
+
+<script type="text/javascript">
+      let table = $('#task_filter')
+      if (table) {
+            table.children().click(set_filter);
+            filter_tasks()
+      }
+
+      function filter_tasks() {
+            let color = '#dceffa'
+            $('table[data-type="list"]').show()
+            let task_filter = getCookie('task_filter')
+            let rows = $('table[data-type="list"] tr:not(:first-of-type)')
+            rows.show()
+            if (task_filter) {
+                  $('#task_filter div[data-filter="' + task_filter + '"]').css('background-color', color)
+                  rows.not('[data-status="' + task_filter + '"]').hide()
+            } else {
+                  $('#task_filter div[data-filter=""]').css('background-color', color)
+            };
+            if ($('table[data-type="list"]').find('tr:visible').length == 1) {
+                  $('table[data-type="list"]').hide()
+                  $('#null_filter_result').show()
+            } else {
+                  $('table[data-type="list"]').show()
+                  $('#null_filter_result').hide()
+            }
+      };
+
+      function set_filter() {
+            $(this).siblings().css('background-color', '')
+            $(this).css('background-color', 'gray')
+            let filter_value = $(this).data('filter')
+            document.cookie = "task_filter=" + filter_value
+            filter_tasks()
+      }
+
+      function getCookie(name) {
+            let matches = document.cookie.match(new RegExp(
+            "(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"
+            ));
+            return matches ? decodeURIComponent(matches[1]) : undefined;
+      }
+
+
+    $('.clickable-row').click(function() {
+        window.location = $(this).data('href');
+    });
+
+</script>
+{% endblock %}

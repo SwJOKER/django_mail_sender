@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}<title>MailTasker - Шаблоны</title>{% endblock %}
+{% block content %}
+
+      <div class="list_div"><h3>Шаблоны</h3></div>
+      {% if templates %}
+            <table data-type="list">
+            <tr>
+                  <td>Название</td>
+                  <td>Тема</td>
+            </tr>
+            {% for template in templates %}
+                  <tr class="clickable-row" data-href="{% url 'mailtasks:template_detail' pk=template.id %}">
+                        <td>{{ template.name }}</td>
+                        <td>{{ template.subject }}</td>
+                  </tr>
+            {% endfor %}
+            </table>
+      {% else %}
+            <div>Шаблонов пока нет.</div>
+      {% endif %}
+
+<script type="text/javascript">
+    $('.clickable-row').click(function() {
+        window.location = $(this).data('href');
+    });
+</script>
+{% endblock %}

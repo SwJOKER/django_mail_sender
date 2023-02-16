@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}<title>MailTasker - Почтовый сервер</title>{% endblock %}
+{% block content %}
+<form action="{{ action_link }}" method="post">
+{% csrf_token %}
+    <h2>Настройка SMTP</h2>
+    {{ form.name.label_tag }}
+    {{ form.name }}
+    {% if form.name.errors %}<div class="error_div">{{ form.name.errors|striptags }}</div>{% endif %}
+    {{ form.host.label_tag }}
+    {{ form.host }}
+    {% if form.host.errors %}<div class="error_div">{{ form.host.errors|striptags }}</div>{% endif %}
+    {{ form.port.label_tag }}
+    {{ form.port }}
+    {% if form.port.errors %}<div class="error_div">{{ form.port.errors|striptags }}</div>{% endif %}
+    {{ form.username.label_tag }}
+    {{ form.username }}
+    {% if form.username.errors %}<div class="error_div">{{ form.username.errors|striptags }}</div>{% endif %}
+    {{ form.password.label_tag }}
+    {{ form.password }}
+    {% if form.password.errors %}<div class="error_div">{{ form.password.errors|striptags }}</div>{% endif %}
+    {{ form.send_from.label_tag }}
+    {{ form.send_from }}
+    {% if form.send_from.errors %}<div class="error_div">{{ form.send_from.errors|striptags }}</div>{% endif %}
+    <div>
+        {{ form.ssl.label_tag }}
+        {{ form.ssl }}
+        {% if form.ssl.errors %}<div class="error_div">{{ form.ssl.errors|striptags }}</div>{% endif %}
+    </div>
+    <div>
+        {{ form.tls.label_tag }}
+        {{ form.tls }}
+        {% if form.tls.errors %}<div class="error_div">{{ form.tls.errors|striptags }}</div>{% endif %}
+    </div>
+    {% if form.non_field_errors %}
+        {% for err in form.non_field_errors %}
+            <div class="error_div"> {{ err|striptags }}</div>
+        {% endfor %}
+    {% endif %}
+    <button type="submit">Сохранить</button>
+</form>
+<script type="text/javascript">
+    $('input[type="checkbox"]').click(check_only_one)
+    function check_only_one() {
+        $('input[type="checkbox"]').not(this).prop('checked', !this.checked);
+    }
+</script>
+{% endblock %}

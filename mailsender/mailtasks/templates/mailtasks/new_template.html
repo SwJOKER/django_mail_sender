@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}<title>MailTasker - {{ title }}</title>{% endblock %}
+{% block content %}
+    <form action="{{ action_link }}" method="post">
+        <h2>{{ title }}</h2>
+        {% csrf_token %}
+        {% for field in form %}
+            {{ field.label_tag }} {{ field }}
+            {% if field.errors %}<div class="error_div">{{ field.errors|striptags }}</div>{% endif %}
+        {% endfor %}
+        {{ form.media }}
+        <label id="custom-file-upload">
+            <input id="html_file" type="file" accept=".html, .txt"/>
+            Загрузить HTML файл
+        </label>
+        <button type="submit">Сохранить</button>
+    </form>
+    {% if object %}
+    {% load static %}
+    <form name="delete" onsubmit="return confirm('Вы уверены, что хотите удалить список?')" title="Удалить"
+          action="{% url 'mailtasks:template_delete' object.id %}" method="post">
+        {% csrf_token %}
+        <button type="submit"><img src = "{%  static 'mailtasks/delete.svg' %}" alt="Ok" height="20px"/></button>
+    </form>
+    {% endif %}
+    <script type="text/javascript">let var_url = '{% url 'mailtasks:subscribers_variables' %}';</script>
+    <script src="{% static 'mailtasks/new_template.js' %}"></script>
+{% endblock %}

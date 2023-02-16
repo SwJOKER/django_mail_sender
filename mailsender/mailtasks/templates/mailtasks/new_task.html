@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}<title>MailTasker - Новое задание</title>{% endblock %}
+{% block content %}
+<form action="{{ action_link }}" method="post">
+{% csrf_token %}
+    <h2>Новая рассылка</h2>
+    <div class="help">Письма формируются при создании задачи. Последующие изменения в шаблоне и списке рассылки не влияют на задание.</div>
+    {% for field in form %}
+        {{ field.label_tag }} {{ field }}
+        {% if field.errors %}<div class="error_div">{{ field.errors|striptags }}</div>{% endif %}
+    {% endfor %}
+    <div class="error_div" id="template_error" style="height:100%; display: none" ></div>
+    <button type="submit">Создать</button>
+</form>
+{% load static %}
+<script src="{% static 'mailtasks/new_task.js' %}"></script>
+{% endblock %}

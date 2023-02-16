@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html style="height: 100%;" lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ object.subject }}</title>
+</head>
+<body style="height: 100%">
+<div>
+    <p>Тема письма: "{{ object.subject }}"</p>
+    <p>Получатель: {{object.recipient}}</p>
+</div>
+<iframe srcdoc="{{object.content}}" height="100%" width="100%" style="overflow:hidden; width:100%; height=100%"/>
+</body>
+</html>
+
+
+
+

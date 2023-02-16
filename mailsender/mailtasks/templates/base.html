@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    {% load static %}
+    <script type="text/javascript">
+        const csrftoken = '{{ csrf_token }}';
+        const user_logged = '{{ user.is_authenticated.value }}'
+        const registration_url = '{% url 'mailtasks:registration' %}'
+        const login_url = '{% url 'mailtasks:post_login' %}'
+        const reset_url = '{% url 'mailtasks:reset_password' %}'
+    </script>
+    <script src="https://code.jquery.com/jquery-3.6.3.js"
+  integrity="sha256-nQLuAZGRRcILA+6dMBOvcRh5Pe310sBpanc6+QBmyVM="
+            crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+    <link rel="stylesheet" href="{% static 'mailtasks/styles.css' %}">
+    <link rel="shortcut icon" href="{%  static 'mailtasks/favicon.ico' %}">
+    {% block title %}<title>MailTasker</title>{% endblock %}
+  </head>
+  <body>
+    <header>
+        <div class="menu">
+            <div class="logo">MailTasker</div>
+            <nav>
+                <li class="menu-item"><a href="{% url 'mailtasks:index' %}">Главная</a></li>
+                {% if user.is_authenticated %}
+                    <li class="menu-item"><a href="{% url 'mailtasks:templates' %}">Шаблоны</a></li>
+                    <li class="menu-item"><a href="{% url 'mailtasks:subscribers' %}">Списки рассылки</a></li>
+                    <li class="menu-item"><a href="{% url 'mailtasks:task_list' %}">Задания</a></li>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+    <div class="container">
+        <main>
+            <div class="content">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+        <aside class="sidebar">
+            <div id="login_form">
+                <div>Войти</div>
+                <form action="{% url 'mailtasks:post_login' %}" method="post" name="login">
+                    <input type="text" name="username" maxlength="40" placeholder="Логин" required>
+                    <input type="password" name="password" maxlength="40" placeholder="Пароль" required autocomplete="on">
+                    <div id="login_error_msg"></div>
+                    <a id='forgot_pwd_link' class="form-link" href="#"><b>Забыли пароль?</b></a>
+                    <button id="login_button" type="submit">Войти</button>
+                </form>
+                <button id="create_account" type="button">Создать аккаунт</button>
+            </div>
+            <div id="registration_form">
+                <div>Регистрация</div>
+                <form method="post" name="registration">
+                    <input type="text" name="login" maxlength="40" placeholder="Логин" required>
+                    <div id="name_registration_msg"></div>
+                    <input type="password" name="password1" maxlength="40" placeholder="Пароль" required  autocomplete="on">
+                    <input type="password" name="password2" maxlength="40" placeholder="Подтвердите пароль" required  autocomplete="on">
+                    <div id="passwrod_registration_msg"></div>
+                    <input type="email" name="email" maxlength="50" placeholder="email" required>
+                    <div id="email_registration_msg"></div>
+                    <button id="registration_button" type="submit">Регистрация</button>
+                    <button id="cancel_registration_button" type="button">Вернуться</button>
+                </form>
+            </div>
+            <div id="reset_pwd_form">
+                <div>Восстановление доступа</div>
+                <form action="{% url 'mailtasks:reset_password' %}" method="post" name="reset">
+                    {% csrf_token %}
+                    <input type="text" name="email" maxlength="40" placeholder="email" required>
+                    <div id="reset_pwd_msg" style="color: #8ac858; font-size: 12px;">На вашу почту отправлена инструкция по сбросу пароля</div>
+                    <button id="reset_pwd_button" type="submit">Сбросить пароль</button>
+                    <button id="cancel_reset_button" type="button">Вернуться</button>
+                </form>
+            </div>
+            <div id="logged_menu">
+                <div>{{ user }}</div>
+                <hr>
+                <a href="{% url 'mailtasks:new_subscribers' %}"><button type="button">Создать список рассылки</button></a>
+                <a href="{% url 'mailtasks:new_template' %}"><button type="button">Создать шаблон</button></a>
+                <a href="{% url 'mailtasks:new_task' %}"><button type="button">Создать задание</button></a>
+                <a href="{% url 'mailtasks:set_smtp' %}"><button type="button">Настроить SMTP</button></a>
+                <hr>
+                <button type="button" id="logout_button">Выйти</button>
+            </div>
+        </aside>
+    </div>
+    <footer>
+    </footer>
+    <script src="{% static 'mailtasks/requests.js' %}"></script>
+  </body>
+</html>
+

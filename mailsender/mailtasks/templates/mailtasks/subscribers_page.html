@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}<title>MailTasker - {{ title }}</title>{% endblock %}
+{% block content %}
+<template id="id_formset_empty_form">
+    <tr>
+        {% for field in formset.empty_form.hidden_fields %}
+        {{ field }}
+        {% endfor %}
+        {% for field in formset.empty_form.visible_fields %}
+        <td>
+            {{ field }}
+        </td>
+        {% endfor %}
+    </tr>
+</template>
+<form action="{{ action_link }}" method="post" autocomplete="off">
+    <h2>{{ title }}</h2>
+    {% csrf_token %}
+    {{ form.name }}
+    {% if form.name.errors %}<div class="error_div">{{ form.name.errors|striptags }}</div>{% endif %}
+    {{ formset.management_form }}
+    {% if formset.model.type_name == 'Variable' %}
+        <h3>Переменные</h3>
+        {% if help %}
+            <div class="help">{{ help }}</div>
+        {% endif %}
+    {% endif %}
+    {% for error in formset.input_distinct_errors %}
+        <div class="error_div">{{ error|striptags }}</div>
+    {% endfor %}
+    <div class="formset_errors" style="display: none;">
+        {% for dict in formset.errors %}
+            <div data-form-index="{{ forloop.counter0 }}" >
+            {% for key, error in dict.items %}
+                <div class="error_div" data-key="{{ key }}">{{ error|striptags }}</div>
+            {% endfor %}
+            </div>
+        {% endfor %}
+    </div>
+    <table data-type='common_table'>
+        <tbody id="id_formset_container">
+        <tr>
+            {% for f in formset|slice:'1' %}
+                {% for field in f.visible_fields %}
+                <td>{{ field.label_tag }}</td>
+                {% endfor %}
+            {% endfor %}
+        </tr>
+        {% for form in formset %}
+        <tr data-form-index="{{ forloop.counter0 }}">
+            {% for field in form.hidden_fields %}
+                {{ field }}
+            {% endfor %}
+            {% for field in form.visible_fields %}
+            <td>
+                <div>
+                    {{ field }}
+                </div>
+            </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <div>
+        <div class="formset_button" id="id_formset_add_button">Добавить</div>
+        {% if formset.model.type_name == 'Subscriber' %}
+            <a href="{% url 'mailtasks:subscribers_edit_vars' object.id %}"><div class="formset_button" id="id_edit_vars_button">Настройки переменных</div></a>
+        {% endif %}
+    </div>
+    {% if formset.model.type_name == 'Variable' %}
+        <button id="id_submit_button" type="submit">Продолжить</button>
+    {% else %}
+        <button id="id_submit_button" type="submit">Сохранить</button>
+    {% endif %}
+</form>
+{% load static %}
+{% if object and formset.model.type_name == 'Subscriber' %}
+<form name="delete" onsubmit="return confirm('Вы уверены, что хотите удалить список?')" title="Удалить"
+      action="{% url 'mailtasks:subscribers_list_delete' object.id %}" method="post">
+    {% csrf_token %}
+    <button type="submit"><img src="{%  static 'mailtasks/delete.svg' %}" alt="Ok" height="20px"/></button>
+</form>
+{% endif %}
+<script src="{% static 'mailtasks/subscribers_page.js' %}"></script>
+<script src="{% static 'mailtasks/formset_dynamic.js' %}"></script>
+{% endblock %}
