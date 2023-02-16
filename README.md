@@ -22,5 +22,4 @@ There arent callbacks for any autoupdates on the client side yet. Apparently it 
 Service provides posibility for check messages for the reading, but not the delivery status. 
 Checking status could be realised using local email server and analyse logs or schduled requests to imap server, with analyse email headers.
 
-I have a lot of ideas, but i think i took too much time and there is non-zero posibility that my work will not have be honored. 
-In any case i beg you to leave feedback. It very important for me. swetocopy@gmail.com
+I have a lot of ideas, but i think i took too much time and there is non-zero posibility that my work will not have to be honored. In any case i beg you to give a feedback. It very important for me. swetocopy@gmail.com
