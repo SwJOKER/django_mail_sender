@@ -143,6 +143,9 @@ class Task(models.Model):
     scheduled = models.BooleanField(default=False)
     celery_id = models.CharField(max_length=36, null=True)
 
+    def is_letters_created(self):
+        return self.get_ready_letters().count() == self.get_subscribers().count()
+
     def can_delete(self):
         return self.status not in self.deny_delete_status_list
 

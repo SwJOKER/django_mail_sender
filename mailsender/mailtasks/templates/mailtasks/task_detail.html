@@ -43,8 +43,8 @@
         {% csrf_token %}
         <button type="submit"><img src = "{%  static 'mailtasks/delete.svg' %}" alt="Ok" height="20px"/></button>
     </form>
-    {% endif %}
-    {% if object.get_ready_letters.count == object.get_subscribers.count %}
+        {% endif %}
+        {% if object.is_letters_created %}
         <table data-type='common_table'>
             <tr>
                 <td>Отправлено</td>
@@ -78,10 +78,19 @@
             {% endfor %}
         </table>
     {% else %}
-        <div>Письма еще не готовы. Обновите страницу позже.</div>
+        <div>Письма еще не готовы. Подождите.</div>
     {% endif %}
     </div>
     <script type="text/javascript">
+        let letters_not_ready = !('{{ object.is_letters_created }}' === 'True')
+        async function reload_unready_task() {
+           if (letters_not_ready) {
+               await new Promise(resolve => setTimeout( () => {
+                   location.reload()
+               }, 1000))
+           }
+        }
+        reload_unready_task()
         if (typeof(id_scheduled) !== 'undefined') {
             document.getElementById('id_start_time').disabled = !id_scheduled.checked
             id_scheduled.addEventListener('change', (event) => {
