@@ -5,7 +5,7 @@ Service use celery and redis for async tasks. On main page there is instructions
 Developed on python2/Django 1.11 as required by task terms.
 
 Default subscribers list includes only one variable - email, but user can add extra variables for using in the templates.
-Subscribers list fills manuality. It could be improved by adding loading from file, csv for example. Or from google docs.
+Subscribers list fills up manuality. It could be improved by adding loading from file, csv for example. Or from google docs.
 
 Templates can be loaded from html file or inserted/typed manuality. 
 Template page contains WYSIWYG editor, which provides edititng html source and see what would be in the result.
