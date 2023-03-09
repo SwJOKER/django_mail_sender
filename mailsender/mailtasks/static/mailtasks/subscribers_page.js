@@ -1,3 +1,4 @@
+window.addEventListener('load', (event) => {
     $('.formset_errors').children().each(function() {
         let index = $(this).attr('data-form-index')
         $(this).children('.error_div').each(function() {
@@ -12,3 +13,4 @@
 
         });
     });
+})

@@ -1,6 +1,4 @@
-from django.conf import settings
 from django.conf.urls import url
-from django.conf.urls.static import static
 
 import views
 
@@ -30,4 +28,4 @@ urlpatterns = [
     url(r'^reset/?$', views.PasswordReset.as_view(), name='reset_password'),
     url(r'^registration/?$', views.RegisterView.as_view(), name='registration'),
     url(r'^$', views.IndexView.as_view(), name='index'),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]

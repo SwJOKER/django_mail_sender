@@ -20,7 +20,6 @@ kombu==4.6.11
 lazy-object-proxy==1.6.0
 mccabe==0.6.1
 pathlib2==2.3.7.post1
-Pillow==6.2.2
 psycopg2-binary==2.8.6
 pycodestyle==2.7.0
 pyflakes==2.3.1

@@ -94,11 +94,7 @@
         if (typeof(id_scheduled) !== 'undefined') {
             document.getElementById('id_start_time').disabled = !id_scheduled.checked
             id_scheduled.addEventListener('change', (event) => {
-                if (event.currentTarget.checked) {
-                       document.getElementById('id_start_time').disabled = false
-                } else {
-                       document.getElementById('id_start_time').disabled = true
-                }
+               document.getElementById('id_start_time').disabled = !(event.currentTarget.checked)
             })
         }
     </script>

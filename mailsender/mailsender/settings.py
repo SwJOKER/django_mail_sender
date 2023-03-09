@@ -16,21 +16,22 @@ import os
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '44y*c570^b313+nir!y-@-)dqj9@o7rz*q^cm@*=ldj4t^j8fl')
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = bool(os.environ.get('DJANGO_DEBUG', True))
-
 DEFAULT_CHARSET = 'utf-8'
 
-ALLOWED_HOSTS = []
+SECRET_KEY = os.environ.get("SECRET_KEY") or 'set_manulity'
 
-SITE_URL = u'http://127.0.0.1:8000'
+DEBUG = bool(os.environ.get("DEBUG")) or 1
+
+if os.environ.get("DJANGO_ALLOWED_HOSTS"):
+    ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
+else:
+    print 'ALLOWED_HOST not found in enviroment variables. Uses default'
+    ALLOWED_HOSTS = ['*']
+
+SITE_URL = os.environ.get('SITE_URL') or u'http://127.0.0.1:8000'
 # Application definition
 
 INSTALLED_APPS = [
@@ -78,20 +79,15 @@ WSGI_APPLICATION = 'mailsender.wsgi.application'
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'test_db.sqlite3'),
+    "default": {
+        "ENGINE": os.environ.get("SQL_ENGINE") or "django.db.backends.sqlite3",
+        "NAME": os.environ.get("SQL_DATABASE") or os.path.join(BASE_DIR, "db.sqlite3"),
+        "USER": os.environ.get("SQL_USER") or "user",
+        "PASSWORD": os.environ.get("SQL_PASSWORD") or "password",
+        "HOST": os.environ.get("SQL_HOST") or "localhost",
+        "PORT": os.environ.get("SQL_PORT") or "5432",
     }
 }
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'admin',
-#         'USER': 'admin',
-#         'PASSWORD': '12345',
-#     }
-# }
 
 
 # Password validation
@@ -127,30 +123,26 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = 'mailtasks/static'
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'mailtasks/media')
-
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60
-
-REDIS_HOST = 'localhost'
-REDIS_PORT = '6379'
+REDIS_HOST = os.getenv('REDIS_HOST') or 'localhost'
+REDIS_PORT = os.getenv('REDIS_PORT') or '6379'
 CELERY_BROKER_URL = 'redis://' + REDIS_HOST + ':' + REDIS_PORT + '/0'
 BROKER_TRANSPORT_OPTIONS = {'visibility_timeout': 3600}
 CELERY_RESULT_BACKEND = 'redis://' + REDIS_HOST + ':' + REDIS_PORT + '/0'
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST =
-# EMAIL_HOST_USER =
-# EMAIL_HOST_PASSWORD =   # past the key or password app here
-# EMAIL_PORT = 465
-# EMAIL_USE_TLS = False
-# EMAIL_USE_SSL = True
-# DEFAULT_FROM_EMAIL =
-# SERVER_EMAIL = EMAIL_HOST_USER
+EMAIL_HOST = os.getenv('DJANGO_EMAIL_HOST')
+EMAIL_HOST_USER = os.getenv('DJANGO_EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('DJANGO_EMAIL_HOST_PASSWORD')
+EMAIL_PORT = os.getenv('DJANGO_EMAIL_HOST_PASSWORD')
+EMAIL_USE_TLS = os.getenv('DJANGO_EMAIL_USE_TLS', 'False').lower() == 'true'
+EMAIL_USE_SSL = os.getenv('DJANGO_EMAIL_USE_SSL', 'False').lower() == 'true'
+DEFAULT_FROM_EMAIL = os.getenv('DJANGO_DEFAULT_FROM_EMAIL')
+SERVER_EMAIL = os.getenv('DJANGO_DEFAULT_SERVER_EMAIL')
 
 LOGIN_URL = '/mailtasks'
 
