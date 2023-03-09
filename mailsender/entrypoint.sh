@@ -18,15 +18,7 @@ python manage.py migrate
 # fills up db test data
 python manage.py loaddata test_users_db.json
 python manage.py loaddata test_db.json
-#cat ./test_db.json | python manage.py dbshell
-#psql -h localhost -d databasename -U username -f "c://path_to_file.sql"
-#
-#if [ "$DJANGO_SUPERUSER_USERNAME" ]
-#then
-#    python manage.py createsuperuser \
-#        --noinput \
-#        --username $DJANGO_SUPERUSER_USERNAME \
-#        --email $DJANGO_SUPERUSER_EMAIL
-#fi
+
+python manage.py collectstatic
 
 exec "$@"

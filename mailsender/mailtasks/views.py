@@ -342,7 +342,6 @@ def post_login(request):
         username = request_data['username']
         password = request_data['password']
         user = authenticate(username=username, password=password)
-        print User.objects.all()
         if user is not None:
             login(request, user)
             return JsonResponse({'user': username})

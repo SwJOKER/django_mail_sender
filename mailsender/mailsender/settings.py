@@ -35,12 +35,12 @@ SITE_URL = os.environ.get('SITE_URL') or u'http://127.0.0.1:8000'
 # Application definition
 
 INSTALLED_APPS = [
-    'mailtasks',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'mailtasks',
     'ckeditor',
 ]
 
