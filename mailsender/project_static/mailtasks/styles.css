@@ -356,7 +356,7 @@ table[data-type='list'] tr:not(:first-of-type):hover {
     display: inline-block;
     margin-right: 10px;
     padding: 6px;
-    pointer: pointer;
+    cursor: pointer;
 }
 
 table[data-type='common_table'] tr:first-of-type {
