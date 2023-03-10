@@ -9,7 +9,6 @@ Developed on python2/Django 1.11 as required by task terms.
 Start docker-compose container from project directory where yml file located. 
 ```
 docker-compose up -d --build
-
 ```
 On each restart DB clears and filled up data from json for testing.<br>
 
