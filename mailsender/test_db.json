@@ -1016,24 +1016,6 @@
     }
   },
   {
-    "model": "auth.user",
-    "pk": 1,
-    "fields": {
-      "password": "pbkdf2_sha256$36000$UoPcOTgcBVyU$cBZ3duMQkf6Sph6ASEloIEAOqQpgXqJLEDr8Ku5udgg=",
-      "last_login": "2023-03-09T14:39:36.515Z",
-      "is_superuser": false,
-      "username": "test123",
-      "first_name": "",
-      "last_name": "",
-      "email": "test@test.ru",
-      "is_staff": false,
-      "is_active": true,
-      "date_joined": "2023-02-15T17:34:01.939Z",
-      "groups": [],
-      "user_permissions": []
-    }
-  },
-  {
     "model": "mailtasks.template",
     "pk": 1,
     "fields": {

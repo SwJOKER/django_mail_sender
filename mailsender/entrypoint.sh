@@ -13,12 +13,13 @@ fi
 
 #python manage.py flush --no-input
 python manage.py sqlflush | python manage.py dbshell
-python manage.py makemigrations
-python manage.py migrate
+#python manage.py makemigrations
+#python manage.py migrate
 # fills up db test data
-python manage.py loaddata test_users_db.json
 python manage.py loaddata test_db.json
+python manage.py loaddata test_users_db.json
 
-python manage.py collectstatic
+
+python manage.py collectstatic --noinput
 
 exec "$@"
