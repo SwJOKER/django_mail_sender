@@ -4,7 +4,7 @@ Service for sending email distribution using a templates and a subscribers lists
 Service uses celery and redis for async tasks. On main page there is instructions for using service in Russian language.
 Developed on python2/Django 1.11 as required by task terms.
 
-### There is "n+1" query problems. I know it and how fix it, will optimized.
+### There are "n+1" query problems and bad practices. I know it and how fix it, will optimized. In process
 
 ## Quick Start
 
