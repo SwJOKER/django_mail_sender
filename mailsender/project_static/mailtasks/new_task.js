@@ -1,15 +1,13 @@
 window.addEventListener('load', (event) => {
-    $('#id_subscribers_list, #id_template').change(check_template)
-    }
+    $('#id_subscribers_list, #id_template').change(check_template);
 
     async function check_template(event) {
         if (id_subscribers_list.value && id_template.value) {
-            let url = '{% url 'mailtasks:check_template' %}';
             let data = {
                 template_pk: id_template.value,
                 subscribers_list_pk: id_subscribers_list.value
                 };
-            let response = await fetch(url, {
+            let response = await fetch(check_template_url, {
                 method: "POST",
                 body: JSON.stringify(data),
                 withCredentials: true,
