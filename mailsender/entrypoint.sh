@@ -12,8 +12,11 @@ then
 fi
 
 # erase db
-python manage.py sqlflush | python manage.py dbshell
+python manage.py flush --no-input
 rm -rf ./mailtasks/migrations
+# init migrations
+python manage.py makemigrations mailtasks
+python manage.py migrate
 ### fills up db test data
 python manage.py loaddata test_users_db.json
 python manage.py loaddata test_db.json
