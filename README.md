@@ -23,7 +23,6 @@ Test user:
 Login: test123
 Password: 12345
 ```
-
 ### Production
 
 Start docker
