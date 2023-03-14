@@ -10,9 +10,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 DEFAULT_CHARSET = 'utf-8'
 
-SECRET_KEY = os.environ.get("SECRET_KEY") or 'set_manulity'
+SECRET_KEY = os.getenv('SECRET_KEY', 'set_manuality')
 
-DEBUG = bool(os.environ.get("DEBUG")) or 1
+DEBUG = os.getenv("DEBUG", True)
 
 if os.environ.get("DJANGO_ALLOWED_HOSTS"):
     ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
@@ -20,7 +20,7 @@ else:
     print 'ALLOWED_HOST not found in enviroment variables. Uses default'
     ALLOWED_HOSTS = ['*']
 
-SITE_URL = os.environ.get('SITE_URL') or u'http://127.0.0.1:8000'
+SITE_URL = os.getenv('SITE_URL', 'http://127.0.0.1:8000')
 # Application definition
 
 if DEBUG:
@@ -77,12 +77,12 @@ WSGI_APPLICATION = 'mailsender.wsgi.application'
 
 DATABASES = {
     "default": {
-        "ENGINE": os.environ.get("SQL_ENGINE") or "django.db.backends.sqlite3",
-        "NAME": os.environ.get("SQL_DATABASE") or os.path.join(BASE_DIR, "db.sqlite3"),
-        "USER": os.environ.get("SQL_USER") or "user",
-        "PASSWORD": os.environ.get("SQL_PASSWORD") or "password",
-        "HOST": os.environ.get("SQL_HOST") or "localhost",
-        "PORT": os.environ.get("SQL_PORT") or "5432",
+        "ENGINE": os.getenv("SQL_ENGINE", "django.db.backends.sqlite3"),
+        "NAME": os.getenv("SQL_DATABASE", "db.sqlite3"),
+        "USER": os.getenv("SQL_USER", 'user'),
+        "PASSWORD": os.getenv("SQL_PASSWORD", "password"),
+        "HOST": os.getenv("SQL_HOST", "localhost"),
+        "PORT": os.getenv("SQL_PORT", "5432"),
     }
 }
 
@@ -128,8 +128,8 @@ STATICFILES_DIRS = (
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60
-REDIS_HOST = os.getenv('REDIS_HOST') or 'localhost'
-REDIS_PORT = os.getenv('REDIS_PORT') or '6379'
+REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
+REDIS_PORT = os.getenv('REDIS_PORT', '6379')
 CELERY_BROKER_URL = 'redis://' + REDIS_HOST + ':' + REDIS_PORT + '/0'
 BROKER_TRANSPORT_OPTIONS = {'visibility_timeout': 3600}
 CELERY_RESULT_BACKEND = 'redis://' + REDIS_HOST + ':' + REDIS_PORT + '/0'
