@@ -11,13 +11,13 @@
         <div>Запланированное время рассылки: {{ object.start_time }}</div>
     {% else %}
         <div>Статус: {{ object.get_status_display }}</div>
-    {% endif %}
-    {% if object.status == object.FINISHED %}
-        Прочитано: {{ object.get_readed_letters.count }}/{{ object.get_ready_letters.count }}
-    {% endif %}
-    {% if user.smtp %}
+        {% endif %}
+        {% if object.status == object.FINISHED %}
+        Прочитано: {{ object.readed_letters_count }}/{{ object.ready_letters_count }}
+        {% endif %}
+        {% if user.smtp %}
         {% if form and object.can_start %}
-            <form action="{{ action_link }}" method="post">
+        <form action="{{ action_link }}" method="post">
                 {% csrf_token %}
                 {% if object.status == 'r' %}
                     {{ form.scheduled.label_tag }}
@@ -44,7 +44,7 @@
         <button type="submit"><img src = "{%  static 'mailtasks/delete.svg' %}" alt="Ok" height="20px"/></button>
     </form>
         {% endif %}
-        {% if object.is_letters_created %}
+        {% if object.ready_letters_count == object.subscribers_count %}
         <table data-type='common_table'>
             <tr>
                 <td>Отправлено</td>
@@ -52,7 +52,7 @@
                 <td>Получатель</td>
                 <td>Письмо</td>
             </tr>
-            {% for letter in object.get_ready_letters %}
+            {% for letter in object.letters.all %}
             <tr>
                 <td>
                 {% if letter.send_time %}
@@ -82,7 +82,11 @@
     {% endif %}
     </div>
     <script type="text/javascript">
-        let letters_not_ready = !('{{ object.is_letters_created }}' === 'True')
+        {% if object.ready_letters_count != object.subscribers_count %}
+        let letters_not_ready = true
+        {% else %}
+        let letters_not_ready = false
+        {% endif %}
         async function reload_unready_task() {
            if (letters_not_ready) {
                await new Promise(resolve => setTimeout( () => {

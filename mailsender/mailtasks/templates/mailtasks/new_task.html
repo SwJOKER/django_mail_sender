@@ -13,5 +13,6 @@
     <button type="submit">Создать</button>
 </form>
 {% load static %}
+<script type="text/javascript">let check_template_url = '{% url 'mailtasks:check_template' %}'</script>
 <script src="{% static 'mailtasks/new_task.js' %}"></script>
 {% endblock %}

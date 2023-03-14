@@ -3,6 +3,7 @@ import datetime
 import re
 
 from django.core.exceptions import ValidationError
+from django.db.models import Prefetch
 from django.forms import ModelForm, TextInput, \
     inlineformset_factory, BooleanField, DateTimeField, ModelChoiceField, BaseInlineFormSet, CharField
 from django.forms.widgets import DateInput, DateTimeInput, PasswordInput
@@ -48,7 +49,6 @@ class TemplateForm(ModelForm):
 
 
 class SubscriberForm(ModelForm):
-
     class Meta:
         model = Subscriber
         fields = ['address']
@@ -79,26 +79,46 @@ class CustomFormSet(BaseInlineFormSet):
 
 
 class SubscribersCustomFormset(CustomFormSet):
+
+    def __init__(self, *args, **kwargs):
+        super(SubscribersCustomFormset, self).__init__(*args, **kwargs)
+        self.queryset = kwargs.get('queryset')
+        self._extra_variables = self.instance.variables.all()
+        self.init_subscribers_vars()
+
+    def get_queryset(self):
+        if not self.queryset:
+            prefetch_variables_data = Prefetch('variables_data',
+                                               queryset=VariableData.objects.select_related('variable'))
+            self.queryset = Subscriber.objects.filter(subscribers_list=self.instance).prefetch_related(
+                prefetch_variables_data)
+        return self.queryset
+
+    def init_subscribers_vars(self):
+        data = {}
+        for subscriber in self.get_queryset():
+            var_data = {x.variable.id: x for x in subscriber.variables_data.all() if x is not None}
+            data.update({subscriber.id: var_data})
+        self._subscribers_vars = data
+
+    def get_variable_value(self, subscriber_id, var_id):
+        var_data = self._subscribers_vars.get(subscriber_id)
+        if var_data:
+            return var_data.get(var_id).value
+
     def add_fields(self, form, index):
         super(SubscribersCustomFormset, self).add_fields(form, index)
-        extra_variables = self.instance.variable_set.all()
-        for var in extra_variables:
-            try:
-                var_value = VariableData.objects.get(variable=var, subscriber=form.instance).value
-            except VariableData.DoesNotExist:
-                var_value = None
-            form.fields[var.tag_name] = CharField(max_length=50, label=var.verbose_name, required=True, initial=var_value)
+        # var_data = {x.variable_id:x for x in form.instance.variables_data.all() if not x is None}
+        for var in self._extra_variables:
+            var_value = self.get_variable_value(form.instance.id, var.id)
+            form.fields[var.tag_name] = CharField(max_length=50, label=var.verbose_name, required=True,
+                                                  initial=var_value)
         form.fields[u'DELETE'] = form.fields.pop(u'DELETE')
 
     def save_variables_values(self, instance, form):
-        extra_variables = self.instance.variable_set.all()
-        for var_type in extra_variables:
-            try:
-                var_data = VariableData.objects.get(variable=var_type, subscriber=instance)
-            except VariableData.DoesNotExist:
-                var_data = VariableData(variable=var_type, subscriber=instance)
-            var_data.value = form.cleaned_data[var_type.tag_name]
-            var_data.save()
+        for var_type in self._extra_variables:
+            instance.variables_data.update_or_create(variable=var_type,
+                                                     defaults={'value': form.cleaned_data[var_type.tag_name]})
 
     def save_new(self, form, commit=True):
         instance = form.save(commit=commit)
@@ -112,15 +132,20 @@ class SubscribersCustomFormset(CustomFormSet):
         return form.save(commit=commit)
 
 
-SubscribersFormSet = inlineformset_factory(SubscribersList, Subscriber, form=SubscriberForm, formset=SubscribersCustomFormset, can_delete=True,
-                                           widgets={'birth_date': DateInput(format='%Y-%m-%d', attrs={'class':'form-control', 'type': 'date',
-                                                  'max': timezone.localdate() -
-                                                                          datetime.timedelta(days=365*14),
-                                                  })})
+subscriber_formset_widgets = {'birth_date': DateInput(format='%Y-%m-%d',
+                                                      attrs={'class': 'form-control', 'type': 'date',
+                                                             'max': timezone.localdate() - datetime.timedelta(
+                                                                 days=365 * 14),
+                                                             })}
+
+SubscribersFormSet = inlineformset_factory(SubscribersList, Subscriber,
+                                           form=SubscriberForm,
+                                           formset=SubscribersCustomFormset,
+                                           can_delete=True,
+                                           widgets=subscriber_formset_widgets)
 
 
 class SmtpForm(ModelForm):
-
     class Meta:
         model = Smtp
         fields = '__all__'
@@ -142,7 +167,7 @@ class SubscribersListForm(ModelForm):
         super(SubscribersListForm, self).full_clean()
         try:
             self.instance.validate_unique()
-        except ValidationError as e:
+        except ValidationError:
             self.add_error('name', u'Название должно быть уникальным')
 
 
@@ -156,7 +181,7 @@ class TaskForm(ModelForm):
         super(TaskForm, self).full_clean()
         try:
             self.instance.validate_unique()
-        except ValidationError as e:
+        except ValidationError:
             self.add_error('name', u'Название должно быть уникальным')
 
     def __init__(self, *args, **kwargs):
@@ -174,11 +199,11 @@ class CommitTaskForm(ModelForm):
 
     scheduled = BooleanField(initial=False, label=u'Отложенная отправка', required=False)
     start_time = DateTimeField(required=False, input_formats=('%Y-%m-%dT%H:%M',),
-                                        widget=DateTimeInput(format='%Y-%m-%dT%H:%M',
-                                                                attrs={'type':'datetime-local',
-                                                                      'value': timezone.now().strftime('%Y-%m-%dT%H:%M'),
-                                                                      'min': timezone.now().strftime('%Y-%m-%dT%H:%M'),
-                                                                      'required': False}))
+                               widget=DateTimeInput(format='%Y-%m-%dT%H:%M',
+                                                    attrs={'type': 'datetime-local',
+                                                           'value': timezone.now().strftime('%Y-%m-%dT%H:%M'),
+                                                           'min': timezone.now().strftime('%Y-%m-%dT%H:%M'),
+                                                           'required': False}))
 
 
 class TagNameField(CharField):
@@ -203,6 +228,5 @@ class VariableForm(ModelForm):
         fields = '__all__'
 
 
-VariableFormSet = inlineformset_factory(SubscribersList, Variable, form=VariableForm, formset=CustomFormSet, can_delete=True)
-
-
+VariableFormSet = inlineformset_factory(SubscribersList, Variable, form=VariableForm, formset=CustomFormSet,
+                                        can_delete=True)

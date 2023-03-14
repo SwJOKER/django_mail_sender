@@ -14,6 +14,7 @@ TOKEN_VAR = 1
 tag_re = (re.compile('(%s.*?%s)' %
           (re.escape(VARIABLE_TAG_START), re.escape(VARIABLE_TAG_END))))
 
+
 class CustomLexer(Lexer):
     def tokenize(self):
         in_tag = False
@@ -39,6 +40,7 @@ class CustomLexer(Lexer):
             token = Token(TOKEN_TEXT, token_string, position, lineno)
         return token
 
+
 class CustomTemplateError(TemplateSyntaxError):
     def __unicode__(self):
         regexp = re.compile(r'from \'(.*)\'')
@@ -47,6 +49,7 @@ class CustomTemplateError(TemplateSyntaxError):
 
     def __str__(self):
         return self.__unicode__().encode('utf-8')
+
 
 class CustomTemplate(Template):
 
@@ -67,10 +70,9 @@ class CustomTemplate(Template):
         try:
             return parser.parse()
         except Exception as e:
-            raise
+            raise e
 
     def get_template_tags(self):
         nodes = self.compile_nodelist()
         tags = [str(item.filter_expression) for item in nodes if isinstance(item, VariableNode)]
         return tags
-

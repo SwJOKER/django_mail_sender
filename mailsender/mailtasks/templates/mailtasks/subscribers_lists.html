@@ -11,7 +11,7 @@
             {% for list in lists %}
                   <tr class="clickable-row" data-href="{% url 'mailtasks:subscribers_list_detail' pk=list.id %}">
                         <td>{{ list.name }}</td>
-                        <td>{{ list.subscriber_set.count }}</td>
+                        <td>{{ list.subscribers.count }}</td>
                   </tr>
             {% endfor %}
             </table>

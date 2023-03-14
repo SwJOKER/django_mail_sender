@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 
 import uuid
 
-import pymorphy2
 from ckeditor.fields import RichTextField
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -13,11 +12,12 @@ from django.utils import timezone
 
 class Subscriber(models.Model):
     address = models.EmailField(max_length=100, null=False, verbose_name='email')
-    subscribers_list = models.ForeignKey('SubscribersList', null=False, verbose_name='список рассылки')
+    subscribers_list = models.ForeignKey('SubscribersList', related_name='subscribers', null=False,
+                                         verbose_name='список рассылки')
 
     def get_context(self):
         context = {}
-        variables_data = self.variabledata_set.all()
+        variables_data = self.variables.all()
         context.update({data.variable.tag_name: data.value for data in variables_data})
         context.update({'email': self.address})
         return context
@@ -33,7 +33,7 @@ class Subscriber(models.Model):
 class Smtp(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     host = models.CharField(max_length=50, null=False, blank=False, verbose_name='Сервер')
-    port = models.IntegerField(null=False, blank=False,validators=[MaxValueValidator(65536), MinValueValidator(1)],
+    port = models.IntegerField(null=False, blank=False, validators=[MaxValueValidator(65536), MinValueValidator(1)],
                                verbose_name='Порт')
     password = models.CharField(null=False, blank=False, max_length=60, verbose_name='Пароль')
     username = models.CharField(null=False, blank=False, max_length=60, verbose_name='Логин')
@@ -44,8 +44,9 @@ class Smtp(models.Model):
 
 class VariableData(models.Model):
     value = models.CharField(max_length=50)
-    variable = models.ForeignKey('Variable', on_delete=models.CASCADE, null=False, blank=False)
-    subscriber = models.ForeignKey('Subscriber', on_delete=models.CASCADE, null=False, blank=False)
+    variable = models.ForeignKey('Variable', related_name='data', on_delete=models.CASCADE, null=False, blank=False)
+    subscriber = models.ForeignKey('Subscriber', related_name='variables_data', on_delete=models.CASCADE, null=False,
+                                   blank=False)
 
     class Meta:
         unique_together = ('variable', 'subscriber')
@@ -56,8 +57,8 @@ class VariableData(models.Model):
 class Variable(models.Model):
     tag_name = models.CharField(max_length=40, null=False, blank=False, verbose_name='имя тега')
     verbose_name = models.CharField(max_length=40, null=False, blank=False, verbose_name='название')
-    subscribers_list = models.ForeignKey('SubscribersList', on_delete=models.CASCADE, verbose_name='список рассылки')
-
+    subscribers_list = models.ForeignKey('SubscribersList', related_name='variables', on_delete=models.CASCADE,
+                                         verbose_name='список рассылки')
 
     @classmethod
     def type_name(cls):
@@ -69,9 +70,8 @@ class Variable(models.Model):
         verbose_name_plural = 'переменные'
 
 
-
 class SubscribersList(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, related_name='subscriber_lists', on_delete=models.CASCADE)
     name = models.CharField(max_length=150, null=False, verbose_name='название списка')
 
     class Meta:
@@ -80,16 +80,16 @@ class SubscribersList(models.Model):
         verbose_name_plural = 'списки рассылки'
 
     def __unicode__(self):
-        morph = pymorphy2.MorphAnalyzer(lang='ru')
-        recipients_count = self.subscriber_set.all().count()
-        # proper word form with numeral
-        recipient_word = morph.parse('адресат')[0].make_agree_with_number(recipients_count).word
-        return '%s (%s %s)' % (self.name, recipients_count, recipient_word)
+        # morph = pymorphy2.MorphAnalyzer(lang='ru')
+        # recipients_count = self.subscribers.all().count()
+        # # proper word form with numeral
+        # recipient_word = morph.parse('адресат')[0].make_agree_with_number(recipients_count).word
+        return self.name  # '%s (%s %s)' % (self.name, recipients_count, recipient_word)
 
     # array for autocomplete in mail editor
     def autocomplete_array(self):
-        variables = self.variable_set.all()
-        var_list = []
+        variables = self.variables.all()
+        var_list = list()
         var_list.append({'id': 0, 'tag': '{{ email }}', 'name': 'Email'})
         for index, var in enumerate(variables):
             var_list.append({'id': index + 1, 'tag': '{{ ' + var.tag_name + ' }}', 'name': var.verbose_name})
@@ -97,8 +97,8 @@ class SubscribersList(models.Model):
 
     # tagset for check compatibility template and subsribers list
     def get_tag_set(self):
-        variables = self.variable_set.all()
-        tag_list = []
+        variables = self.variables.all()
+        tag_list = list()
         tag_list.append('email')
         for var in variables:
             tag_list.append(var.tag_name)
@@ -143,9 +143,6 @@ class Task(models.Model):
     scheduled = models.BooleanField(default=False)
     celery_id = models.CharField(max_length=36, null=True)
 
-    def is_letters_created(self):
-        return self.get_ready_letters().count() == self.get_subscribers().count()
-
     def can_delete(self):
         return self.status not in self.deny_delete_status_list
 
@@ -155,25 +152,13 @@ class Task(models.Model):
     def can_start(self):
         return self.status in self.can_start_status_list
 
-    def get_subscribers(self):
-        return self.subscribers_list.subscriber_set.all()
-
-    def get_ready_letters(self):
-        return self.letter_set.all()
-
-    def get_sended_letters(self):
-        return self.letter_set.filter(send_time__isnull=False)
-
-    def get_readed_letters(self):
-        return self.letter_set.filter(read_datetime__isnull=False)
-
     def __unicode__(self):
         return 'Name: {}\nSend time:{}\nStatus:{}'.format(self.name, self.start_time, self.status)
 
 
 class Letter(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    task = models.ForeignKey(Task, null=False, on_delete=models.CASCADE)
+    task = models.ForeignKey(Task, related_name='letters', null=False, on_delete=models.CASCADE)
     recipient = models.ForeignKey(Subscriber, on_delete=models.CASCADE)
     delivery_status = models.BooleanField(default=False)
     send_time = models.DateTimeField(null=True)
@@ -192,7 +177,7 @@ class Letter(models.Model):
 
 
 class Template(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, related_name='teamplates', on_delete=models.CASCADE)
     name = models.CharField(max_length=100, verbose_name='Название:')
     subject = models.CharField(max_length=200, verbose_name='Тема:')
     body = RichTextField(null=False, verbose_name='HTML:')
@@ -203,4 +188,3 @@ class Template(models.Model):
 
     def __unicode__(self):
         return self.name
-

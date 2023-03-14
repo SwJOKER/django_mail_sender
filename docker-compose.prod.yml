@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: ./mailsender
+      dockerfile: Dockerfile.prod
+    command: gunicorn mailsender.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - static_volume:/home/mailsender_user/mailsender/staticfiles
+      #- django:/home/mailsender_user/mailsender
+    expose:
+      - 8000
+    env_file:
+      - ./mailsender/.env.prod
+    depends_on:
+      - db
+      - redis
+  redis:
+    image: redis:alpine
+    command: redis-server
+    expose:
+      - 6379
+    restart: unless-stopped
+  celery:
+    build:
+      context: ./mailsender
+      dockerfile: Dockerfile-celery
+    command: celery -A mailtasks worker --loglevel=info --concurrency 1 -E
+    env_file:
+      - ./mailsender/.env.prod
+    #  volumes:
+    #   - django:/home/mailsender_user/mailsender
+    depends_on:
+      - db
+      - redis
+  db:
+    image: postgres:latest
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    expose:
+      - 5432
+    env_file:
+      - ./mailsender/.env.prod.db
+  nginx:
+    build: ./nginx
+    volumes:
+      - static_volume:/home/mailsender_user/mailsender/staticfiles
+    ports:
+      - 1337:80
+    depends_on:
+      - web
+
+volumes:
+  static_volume:
+  postgres_data:
+  # django:

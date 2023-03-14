@@ -21,5 +21,11 @@ from django.views.generic import RedirectView
 urlpatterns = [
     url(r'^mailtasks/', include('mailtasks.urls', namespace='mailtasks')),
     url(r'^', include('django.contrib.auth.urls')),
-    url(r'', RedirectView.as_view(pattern_name='mailtasks:index'))
-] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    url(r'', RedirectView.as_view(pattern_name='mailtasks:index')),
+]
+
+if settings.DEBUG:
+    import debug_toolbar
+
+    urlpatterns = [url(r'^__debug__/', include(debug_toolbar.urls))] + urlpatterns
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

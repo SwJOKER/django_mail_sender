@@ -1,0 +1,12 @@
+[flake8]
+
+max-line-length = 130
+
+exclude =
+    ./mailtasks/migrations/,
+
+# Cutting ourselves some slack
+ignore =
+  # F401 - multiple import on the line
+  F401
+  E126

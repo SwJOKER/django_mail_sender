@@ -11,6 +11,7 @@ from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
+from django.db.models import Prefetch, Count, Q
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.shortcuts import redirect
 from django.template.loader import render_to_string
@@ -37,13 +38,22 @@ def view_404(request, exception=None):
 
 class CheckUserBelongingMixin(UserPassesTestMixin):
     def test_func(self):
-        if self.request.user.is_authenticated:
+        login_user = self.request.user
+        if login_user.is_authenticated:
             pk = self.kwargs['pk']
             obj = self.model.objects.get(pk=pk)
-            login_user = self.request.user
             return login_user.pk == obj.user.pk
         else:
-            return False
+            return True
+
+
+class GetObjectOnceMixin:
+    # i am not sure that is a good practice.
+    def get_object(self):
+        if not hasattr(self, 'object'):
+            return super(UpdateView, self).get_object()
+        else:
+            return self.object
 
 
 class IndexView(ListView):
@@ -61,10 +71,20 @@ class TemplatesView(LoginRequiredMixin, ListView):
         return Template.objects.filter(user=self.request.user)
 
 
-class TaskDetailView(LoginRequiredMixin, CheckUserBelongingMixin, UpdateView):
+class TaskDetailView(LoginRequiredMixin, GetObjectOnceMixin, CheckUserBelongingMixin, UpdateView):
     form_class = CommitTaskForm
     model = Task
     template_name = 'mailtasks/task_detail.html'
+
+    def get_queryset(self):
+        prefetch_letters = Prefetch('letters', queryset=Letter.objects.select_related('recipient'))
+        queryset = Task.objects.select_related('template', 'subscribers_list') \
+            .prefetch_related(prefetch_letters) \
+            .annotate(ready_letters_count=Count('letters'),
+                      sended_letters_count=Count('letters', filter=Q(letters__send_time__isnull=False)),
+                      readed_letters_count=Count('letters', filter=Q(read_datetime__isnull=False)),
+                      subscribers_count=Count('subscribers_list__subscribers'))
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super(TaskDetailView, self).get_context_data(**kwargs)
@@ -102,7 +122,7 @@ class TaskStopView(TaskDetailView):
             app.control.revoke(task_id, terminate=True)
             self.object.celery_id = None
         self.object.status = Task.READY
-        self.object.start_time = None;
+        self.object.start_time = None
         self.object.save()
         return HttpResponseRedirect(self.get_success_url())
 
@@ -137,11 +157,14 @@ class SubscribersListDeleteView(LoginRequiredMixin, CheckUserBelongingMixin, Del
         reverse_lazy('mailtasks:subscribers_list_detail', kwargs={'pk': self.object.id})
 
 
-class TemplateDetailView(LoginRequiredMixin, CheckUserBelongingMixin, UpdateView):
+class TemplateDetailView(LoginRequiredMixin, GetObjectOnceMixin, CheckUserBelongingMixin, UpdateView):
     form_class = TemplateForm
     model = Template
     template_name = 'mailtasks/new_template.html'
     success_url = reverse_lazy('mailtasks:templates')
+
+    # def get_queryset(self):
+    #     Template.objects.
 
     def get_context_data(self, **kwargs):
         context = super(TemplateDetailView, self).get_context_data(**kwargs)
@@ -157,10 +180,10 @@ class SubscribersListsView(LoginRequiredMixin, ListView):
     template_name = 'mailtasks/subscribers_lists.html'
 
     def get_queryset(self):
-        return SubscribersList.objects.filter(user=self.request.user)
+        return SubscribersList.objects.filter(user=self.request.user).prefetch_related('subscribers')
 
 
-class SubscribersListDetailView(LoginRequiredMixin, CheckUserBelongingMixin, UpdateView):
+class SubscribersListDetailView(LoginRequiredMixin, GetObjectOnceMixin, CheckUserBelongingMixin, UpdateView):
     form_class = SubscribersListForm
     model = SubscribersList
     template_name = 'mailtasks/subscribers_page.html'
@@ -168,13 +191,18 @@ class SubscribersListDetailView(LoginRequiredMixin, CheckUserBelongingMixin, Upd
     formset_class = SubscribersFormSet
     title = 'Редактирование списка'
 
+    def get_queryset(self):
+        queryset = SubscribersList.objects.filter(user=self.request.user).all()
+        return queryset
+
     def get_formset(self, *args, **kwargs):
-        child_model = self.formset_class.fk.model
-        if not child_model.objects.filter(**{self.formset_class.fk.name: self.object}).count():
-            self.formset_class.extra = 1
-        else:
-            self.formset_class.extra = 0
-        return self.formset_class(*args, **kwargs)
+        if not hasattr(self, '_formset'):
+            if not self.get_object().subscribers.first():
+                self.formset_class.extra = 1
+            else:
+                self.formset_class.extra = 0
+            self._formset = self.formset_class(*args, **kwargs)
+        return self._formset
 
     def get_context_data(self, formset=None, **kwargs):
         context = super(SubscribersListDetailView, self).get_context_data(**kwargs)
@@ -286,7 +314,7 @@ class SubscribersVarsJsonView(LoginRequiredMixin, View):
 
 class CheckTemplateView(LoginRequiredMixin, View):
     template_overvars_message = 'Шаблон содержит переменные, которых нет в списке рассылки. ' \
-                        'Переменные, которых нет в списке рассылки, будут удалены из текста письма.'
+                                'Переменные, которых нет в списке рассылки, будут удалены из текста письма.'
 
     def post(self, request):
         if request.method == 'POST':
@@ -299,8 +327,9 @@ class CheckTemplateView(LoginRequiredMixin, View):
             except (SubscribersList.DoesNotExist, Template.DoesNotExist):
                 return JsonResponse({}, status=403)
             try:
-                template_tags = CustomTemplate(template.subject).get_template_tags() + \
-                                CustomTemplate(template.body).get_template_tags()
+                template_tags = CustomTemplate(template.subject).get_template_tags() \
+                                + CustomTemplate(template.body).get_template_tags()
+
             except CustomTemplateError as e:
                 message = str(e)
                 return JsonResponse({'result': False, 'message': message}, status=406, safe=False)
@@ -474,7 +503,7 @@ class CreateSmtpView(LoginRequiredMixin, SingleObjectTemplateResponseMixin, Base
         user = self.request.user
         try:
             return user.smtp
-        except Smtp.DoesNotExist as e:
+        except Smtp.DoesNotExist:
             return Smtp(user=user)
 
     def form_valid(self, form):
@@ -488,6 +517,8 @@ class TaskListView(LoginRequiredMixin, ListView):
     template_name = 'mailtasks/task_list.html'
 
     def get_queryset(self):
-        return Task.objects.filter(user=self.request.user)
-
-
+        return Task.objects.filter(user=self.request.user) \
+            .prefetch_related('letters') \
+            .annotate(ready_letters_count=Count('letters')) \
+            .annotate(sended_letters_count=Count('letters__send_time', filter=Q(send_time__isnull=False))) \
+            .annotate(readed_letters_count=Count('letters__read_datetime', filter=Q(datetime__isnull=False)))
